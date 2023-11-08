@@ -1,0 +1,32 @@
+.movie-box {
+      padding: 25px 0 0 0;
+}
+
+.moviecard {
+      background-color: #edf2fb;
+      border-radius: 10px;
+}
+
+.movieimg {
+      padding: 10px 30px 0 30px;
+}
+
+.moviedetails {
+      padding: 5px 30px 10px 30px;
+}
+
+.moviedetails > h5 {
+      color: #3d5a80;
+      font-family: inherit;
+}
+
+.moviedetails > h6 {
+      color: #777;
+      font-family: inherit;
+      text-align: justify;
+}
+
+.moviedetails > span {
+      color: #9e2a2b;
+      font-family: inherit;
+}

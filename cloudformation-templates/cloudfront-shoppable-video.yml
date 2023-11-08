@@ -1,0 +1,334 @@
+Parameters:
+  ContentsS3BucketDomainName:
+    Description: The regional domain name of the S3 bucket created for storing contents of Shoppable Video.
+    Type: String
+
+  SnapshotsS3BucketDomainName:
+    Description: The regional domain name of the S3 bucket created for storing snapshots of Shoppable Video.
+    Type: String
+
+  AmplifyAppDomainName:
+    Description: The domain name of the Shoppable Video app.
+    Type: String
+  
+  PersonalizeS3BucketName:
+    Description: The name of the PersonalizeS3Bucket created.
+    Type: String
+
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+        - Id: ContentsS3Origin
+          DomainName: !Ref ContentsS3BucketDomainName
+          S3OriginConfig:
+            OriginAccessIdentity: 
+              Fn::Sub:
+              - origin-access-identity/cloudfront/${OAIID}
+              - OAIID: !GetAtt [OAI, Id] 
+            # Fn::Join:
+            # - ''
+            # - - 'origin-access-identity/'
+            #   - 'cloudfront/'
+            #   - !GetAtt [OAI, Id]
+        - Id: SnapshotsS3Origin
+          DomainName: !Ref SnapshotsS3BucketDomainName
+          S3OriginConfig:
+            OriginAccessIdentity:
+              Fn::Sub:
+                - origin-access-identity/cloudfront/${OAIID}
+                - OAIID: !GetAtt [OAI, Id] 
+        - Id: AmplifyAppOrigin
+          DomainName: !Ref AmplifyAppDomainName
+          CustomOriginConfig:
+            HTTPPort: '80'
+            HTTPSPort: '443'
+            OriginProtocolPolicy: https-only
+        Enabled: 'true'
+        Comment: ShoppableVideo
+        DefaultCacheBehavior:
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: all
+          TargetOriginId: AmplifyAppOrigin
+          Compress: true
+          AllowedMethods:
+            - GET
+            - HEAD
+          ViewerProtocolPolicy: allow-all
+          SmoothStreaming: 'true'
+        CacheBehaviors:
+        - AllowedMethods:
+          - GET
+          - HEAD
+          TargetOriginId: ContentsS3Origin
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: allow-all
+          MinTTL: '50'
+          PathPattern: '*.mp4'
+        - AllowedMethods:
+          - GET
+          - HEAD
+          TargetOriginId: ContentsS3Origin
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: allow-all
+          MinTTL: '50'
+          PathPattern: '*.jpg'
+        - AllowedMethods:
+          - GET
+          - HEAD
+          TargetOriginId: ContentsS3Origin
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: allow-all
+          MinTTL: '50'
+          PathPattern: '*.jpeg'
+        - AllowedMethods:
+          - GET
+          - HEAD
+          TargetOriginId: ContentsS3Origin
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: allow-all
+          MinTTL: '50'
+          PathPattern: '*.webp'
+        - AllowedMethods:
+          - GET
+          - HEAD
+          TargetOriginId: SnapshotsS3Origin
+          ForwardedValues:
+            QueryString: 'false'
+            Cookies:
+              Forward: all
+          ViewerProtocolPolicy: allow-all
+          MinTTL: '50'
+          PathPattern: '*.png'
+        CustomErrorResponses:
+        - ErrorCode: '404'
+          ResponsePagePath: "/error-pages/404.html"
+          ResponseCode: '200'
+          ErrorCachingMinTTL: '30'
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: 'true'
+          MinimumProtocolVersion: TLSv1
+    DependsOn:
+      - OAI
+  
+  OAI:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: ShoppableVideoOAI
+
+  # Personalize
+
+  DatasetGroupPersonalize:
+    Type: AWS::Personalize::DatasetGroup
+    Properties:
+      # Domain: CUSTOM
+      Name: ShoppableVideoDSG
+
+  InteractionsSchemaPersonalize:
+    Type: AWS::Personalize::Schema
+    Properties:
+      # Domain: no option for custom
+      Name: InteractionsSchema
+      # add schema here
+      Schema: >-
+        {
+          "type": "record",
+          "name": "Interactions",
+          "namespace": "com.amazonaws.personalize.schema",
+          "fields": [
+            {
+              "name": "USER_ID",
+              "type": "string"
+            },
+            {
+              "name": "ITEM_ID",
+              "type": "string"
+            },
+            {
+              "name": "TIMESTAMP",
+              "type": "long"
+            },
+            {
+              "name": "EVENT_TYPE",
+              "type": "string"
+            }
+          ],
+          "version": "1.0"
+        }
+
+  ImportJobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - personalize.amazonaws.com
+          Action:
+          - sts:AssumeRole
+  
+  ImportJobExecutionPolicy:
+    DependsOn:
+    - ImportJobRole
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AmazonPersonalize-ExecutionPolicy
+      Roles:
+      - Ref: ImportJobRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:ListBucket
+          Resource:
+          - arn:aws:s3:::*
+
+
+  ImportJobPolicyForPersonalize:
+    DependsOn:
+    - ImportJobRole
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AmazonPersonalizeFullAccess
+      Roles:
+      - Ref: ImportJobRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - personalize:*
+          Resource: "*"
+        - Effect: Allow
+          Action:
+          - cloudwatch:PutMetricData
+          - cloudwatch:ListMetrics
+          Resource: "*"
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          - s3:ListBucket
+          Resource:
+          - arn:aws:s3:::*Personalize*
+          - arn:aws:s3:::*personalize*
+        - Effect: Allow
+          Action:
+          - iam:PassRole
+          Resource: "*"
+          Condition:
+            StringEquals:
+              iam:PassedToService: personalize.amazonaws.com
+
+  
+  InteractionsDatsasetPersonalize:
+    Type: AWS::Personalize::Dataset
+    Properties:
+      DatasetGroupArn: !GetAtt [DatasetGroupPersonalize, DatasetGroupArn]
+      DatasetImportJob: 
+        # DatasetArn: !GetAtt [InteractionsDatasetPersonalize, DatasetArn]
+        DataSource:
+          DataLocation: !Sub s3://${PersonalizeS3BucketName}/interactions-metadata-celebid.csv
+        RoleArn: 
+          Fn::GetAtt:
+          - ImportJobRole
+          - Arn
+        JobName: ImportInteractionsDataset
+      DatasetType: Interactions
+      Name: ShoppableVideoInteractionsDS
+      SchemaArn: !GetAtt [InteractionsSchemaPersonalize, SchemaArn]
+
+  ItemsSchemaPersonalize:
+    Type: AWS::Personalize::Schema
+    Properties:
+      # Domain: no option for custom
+      Name: ItemsSchema
+      # add schema here
+      Schema: >-
+        {
+          "type": "record",
+          "name": "Items",
+          "namespace": "com.amazonaws.personalize.schema",
+          "fields": [
+            {
+              "name": "ITEM_ID",
+              "type": "string"
+            },
+            {
+              "name": "TITLES",
+              "type": "string",
+              "categorical": true
+            }
+          ],
+          "version": "1.0"
+        }
+  
+  ItemsDatsasetPersonalize:
+    Type: AWS::Personalize::Dataset
+    Properties:
+      DatasetGroupArn: !GetAtt [DatasetGroupPersonalize, DatasetGroupArn]
+      DatasetImportJob: 
+        # DatasetArn: !GetAtt [ItemsDatasetPersonalize, DatasetArn] how do i get datset ARN
+        DataSource: 
+          DataLocation: !Sub s3://${PersonalizeS3BucketName}/item-metadata-celebid-tmdbid.csv
+        RoleArn: 
+            Fn::GetAtt:
+            - ImportJobRole
+            - Arn
+        JobName: ImportItemsDataset
+      DatasetType: Items
+      Name: ShoppableVideoItemsDS
+      SchemaArn: !GetAtt [ItemsSchemaPersonalize, SchemaArn]
+
+  SolutionPersonalize:
+    Type: AWS::Personalize::Solution
+    Properties:
+      DatasetGroupArn: !GetAtt [DatasetGroupPersonalize, DatasetGroupArn]
+      Name: ShoppableVideoSolution
+      RecipeArn: arn:aws:personalize:::recipe/aws-user-personalization
+    DependsOn: 
+    - InteractionsDatsasetPersonalize
+    - ItemsDatsasetPersonalize
+
+Outputs:
+  CloudFrontDomainName:
+    Description: The domain name of the cloudfront created.
+    Value: !GetAtt  [CloudFrontDistribution, DomainName]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

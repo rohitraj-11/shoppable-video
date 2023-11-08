@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "paths": {
+    "/identifiedobjects": {
+      "name": "/identifiedobjects",
+      "lambdaFunction": "identifiedobjectslambda",
+      "permissions": {
+        "setting": "open"
+      }
+    },
+    "/snapshots": {
+      "name": "/snapshots",
+      "lambdaFunction": "snapshotslambda",
+      "permissions": {
+        "setting": "open"
+      }
+    },
+    "/recommendationscelebid": {
+      "name": "/recommendationscelebid",
+      "lambdaFunction": "recommendationscelebidlambda",
+      "permissions": {
+        "setting": "open"
+      }
+    },
+    "/puteventanalysed": {
+      "name": "/puteventanalysed",
+      "lambdaFunction": "puteventanalysedlambda",
+      "permissions": {
+        "setting": "open"
+      }
+    }
+  }
+}

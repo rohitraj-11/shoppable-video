@@ -1,0 +1,15 @@
+.merchandise-main-box {
+      padding: 20px 0px 20px 0px;
+      width: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-gap: 15px;
+      // flex-direction: row;
+      margin: 0 auto;
+}
+
+.card-toggle-button {
+      display: flex;
+      justify-content: right;
+      padding: 10px 0 5px 0;
+}

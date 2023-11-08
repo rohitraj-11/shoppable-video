@@ -1,0 +1,46 @@
+.accordion-title {
+      display: flex;
+      justify-content: center;
+      align-content: center;
+}
+
+.accordion-title h1 {
+      font-family: inherit;
+      font-size: large;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+}
+
+.del-btn {
+      height: 4px;
+      width: 4px;
+      background-color: #ffd7ba;
+      border-radius: 4px;
+      display: flex;
+      padding-left: 4px;
+}
+
+.del-btn-box {
+      padding-left: 5px;
+}
+
+.frame-box {
+      padding-left: 50px;
+}
+
+.snapshot-date {
+      color: #767b91;
+}
+
+.snapshot-show {
+      color: #767b91;
+}
+
+@media (max-width: 450px) {
+      .accordion-title h1 {
+            font-family: inherit;
+            font-size: xx-small;
+      }
+}

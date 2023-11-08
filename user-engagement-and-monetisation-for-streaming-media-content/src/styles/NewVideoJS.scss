@@ -1,0 +1,22 @@
+.player-border {
+      background-color: #88d4ab;
+      /* border-color: white;
+      border-radius: 5px;
+      border-style: solid;
+      border-width: 2px; */
+      padding: 8px 8px 8px 8px;
+}
+
+.main-box {
+      padding-left: 80px;
+}
+
+.custom-video-box {
+      display: flex;
+      flex-direction: row;
+}
+
+.custom-video-box > p {
+      padding: 0 10px 0 10px;
+      font-weight: bold;
+}

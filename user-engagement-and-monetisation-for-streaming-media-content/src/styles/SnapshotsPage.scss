@@ -1,0 +1,36 @@
+.snapshots-heading-box {
+      padding: 0px 10px 20px 10px;
+}
+
+.snapshots-heading-title {
+      background-color: #f4a261;
+      border-right: 1px solid white;
+      border-spacing: 50px;
+      color: white;
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+}
+
+.load-more-btn {
+      display: flex;
+      justify-content: center;
+}
+
+.infinite-loader {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      text-align: center;
+      height: 50px;
+}
+
+.end-message {
+      display: flex;
+      justify-content: center;
+}
+
+.end-message > h5 {
+      color: #07beb8;
+      font-family: monospace;
+}

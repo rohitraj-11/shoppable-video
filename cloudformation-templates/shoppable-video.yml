@@ -1,0 +1,116 @@
+Resources:
+  # S3
+  ContentsS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties: {}
+  
+  ContentsS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ContentsS3Bucket
+      PolicyDocument: 
+        Version: '2012-10-17'
+        #Id: PolicyForCloudFrontPrivateContent
+        Statement:
+          - Sid: '1'
+            Effect: Allow
+            Principal:
+              ###  Get arn of cloudfront
+              AWS: 'arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity EGKX0QC7F29OO' 
+            Action: 
+              - s3:GetObject
+            Resource: 
+              - !Sub arn:aws:s3:::${ContentsS3Bucket}/*
+  
+  PersonalizeS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties: {}
+  
+  PersonalizeS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref PersonalizeS3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PersonalizeS3BucketAccessPolicy
+            Effect: Allow
+            Principal:
+              Service: personalize.amazonaws.com
+            Action:
+              - s3:*Object
+              - s3:ListBucket
+            Resource:
+              - !Sub arn:aws:s3:::${PersonalizeS3Bucket}
+              - !Sub arn:aws:s3:::${PersonalizeS3Bucket}/*
+
+  #DynamoDB
+
+  SnapshotsTableDynamoDB:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "userIdentityID"
+          AttributeType: "S"
+        - AttributeName: "snapshotID"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "userIdentityID"
+          KeyType: "HASH"
+        - AttributeName: "snapshotID"
+          KeyType: "RANGE"
+      GlobalSecondaryIndexes: []
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      # StreamSpecification:
+      #   StreamViewType: NEW_IMAGE
+      # TableClass: Standard
+    
+  #Amplify
+
+  ShoppableVideoAppAmplify:
+    Type: AWS::Amplify::App
+    Properties:
+      # EnvironmentVariables:
+      #   - Name: REACT_APP_CLOUDFRONT_LINK
+      #     Value: REACT_APP_CLOUDFRONT_LINK
+      #   - Name: REACT_APP_TMDB_API_KEY
+      #     Value: REACT_APP_TMDB_API_KEY
+      BuildSpec: |
+        version: 1
+        frontend:
+            phases:
+              preBuild:
+                commands:
+                  - npm ci --legacy-peer-deps
+              build:
+                commands:
+                  - npm run build
+            artifacts:
+              baseDirectory: build
+              files:
+                - '**/*'
+            cache:
+              paths:
+                - node_modules/**/*
+      Name: ShoppableVideo
+      # OauthToken: 
+      # Repository: !Ref RepositoryAmplifyApp
+
+Outputs:
+  ContentsS3BucketDomainName:
+    Description: The regional domain name of the S3 buckets used for storing contents.
+    Value: !GetAtt  [ContentsS3Bucket, RegionalDomainName]
+
+  PersonalizeS3BucketDomainName:
+    Description: The regional domain name of the S3 buckets used for storing data related to persinalize.
+    Value: !GetAtt  [PersonalizeS3Bucket, RegionalDomainName]
+  
+  AmplifyAppDomainName:
+    Description: The default domain for the amplify app.
+    Value: !GetAtt  [ShoppableVideoAppAmplify, DefaultDomain]
+
+  SnapshotsTableDynamoDBName:
+    Description: The name of the DynamoDB table.
+    Value: !Ref SnapshotsTableDynamoDB

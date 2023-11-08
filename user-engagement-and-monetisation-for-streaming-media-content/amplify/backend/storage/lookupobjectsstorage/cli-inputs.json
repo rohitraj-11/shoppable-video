@@ -1,0 +1,14 @@
+{
+  "resourceName": "lookupobjectsstorage",
+  "policyUUID": "8575b0f5",
+  "bucketName": "lookupobjectss3storage",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}
